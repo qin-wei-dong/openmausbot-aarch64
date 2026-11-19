@@ -70,12 +70,22 @@ chmod +x OpenMausBot-0.1.170-arm64.AppImage
 
 模型不支持工具调用时，在 `config` 中加 `"tools": false`。改完重启 App。
 
+> 注：`config.json` 初次启动未必自动生成，若不存在直接按上面内容新建即可。模型连通性需在公司内网用真实端点验证。
+
+## 实测验证（linux/arm64 容器）
+
+- `dpkg -i`：通过，包状态为 `install ok installed`，桌面入口 `/usr/share/applications/com.openmausbot.app.desktop` 正常写入。
+- 启动：Xvfb 虚拟显示下主窗口 `OpenMausBot`（`com.openmausbot.app`）创建成功，应用持续运行并生成消息/运行时数据库。
+- AppImage：type-2 格式，`--appimage-extract` 解包成功；内部主程序与 cloudflared 均为 AArch64 原生二进制。
+- CUA 资源按预期缺席，功能 fail-closed，不影响主程序启动。
+
 ## 移植说明（供后续维护）
 
-基于官方源码做了 4 处改动以适配 arm64：
+基于官方源码做了 5 处改动以适配 arm64：
 1. `electron-builder.yml`：linux target 改为 `AppImage + deb` 双目标且均为 `arm64`；extraResources 去掉 `cua-linux-x64`，其余资源路径 x64→arm64。AppImage 工具不再靠容器在线下载，改为预下载并校验的 `appimage-tools-runtime-20251108.tar.gz`，通过 `APPIMAGE_TOOLS_PATH=/work/appimage-tools` 注入（SHA256 `84021a78ee214ae6fd33a2d62a92ba25542dd10bc86bf117a9b2d0bba44e7665`）。
 2. `scripts/after-pack.mjs`：cloudflared 架构白名单加 `linux-arm64`；CUA 校验改为目录不存在则跳过。
-3. `build/linux-after-install.sh`：CUA 权限修复改为目录存在才执行。
-4. 打包时用 `ELECTRON_MIRROR=https://npmmirror.com/mirrors/electron/` 规避 GitHub 下载超时。
+3. `build/linux-after-install.sh`：CUA 权限修复改为目录存在才执行；headless Chrome 可执行文件由硬编码 `chrome-headless-shell-linux64` 改为按实际文件查找（arm64 目录为 `chrome-headless-shell-linux-arm64`）。
+4. `build/linux-openmausbot-browser.apparmor`：profile 路径改为 arm64 的 `chrome-headless-shell-linux-arm64`。
+5. 打包时用 `ELECTRON_MIRROR=https://npmmirror.com/mirrors/electron/` 规避 GitHub 下载超时。
 
 原生资源（cloudflared/browser/duckdb）均为 linux-arm64 官方版本。
