@@ -8,6 +8,13 @@
 
 **[v0.1.170-arm64-dev-source → openmausbot-dev-source-arm64.tar.gz](https://github.com/qin-wei-dong/openmausbot-aarch64/releases/tag/v0.1.170-arm64-dev-source)**（约 959 MB）
 
+本仓库是**公开仓库**，内网无需 GitHub 账号或令牌，直接下载：
+
+```sh
+curl -fL -o openmausbot-dev-source-arm64.tar.gz \
+  https://github.com/qin-wei-dong/openmausbot-aarch64/releases/download/v0.1.170-arm64-dev-source/openmausbot-dev-source-arm64.tar.gz
+```
+
 一个包内含全部内容，**下载这一个即可，无需另下任何东西**：
 
 - arm64 移植版完整源码：桌面端 UI（`src/`）+ Electron 壳（`electron/`）+ harness 与全部 agent 驱动（`server/`）
