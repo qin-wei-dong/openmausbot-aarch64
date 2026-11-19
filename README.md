@@ -1,70 +1,46 @@
-# OpenMausBot aarch64 离线包
+# OpenMausBot · aarch64 离线二次开发源码
 
-## 这是什么
+本仓库只做一件事：提供一份**可在内网 UOS aarch64 电脑上离线构建、二次开发的 OpenMausBot 源码**。
 
-为 **UOS 20 / aarch64 / 内网（无外网）** 环境准备的 OpenMausBot 离线部署包。
-对应版本：源码 `v0.1.170`（main 分支快照），Node `24.22.3` (linux-arm64)，pnpm `10.33.0`。
+## 获取源码
 
-所有依赖已在 **linux/arm64 容器** 内通过 `pnpm install` 真实产出，原生模块为 ARM aarch64 版本，
-已验证 `pnpm install --offline --frozen-lockfile` 可仅凭本包的 store 完整重建依赖，且 `pnpm omb serve --lan` 可正常启动。
+唯一交付物在 Releases：
 
-## 目录结构
+**[v0.1.170-arm64-dev-source → openmausbot-dev-source-arm64.tar.gz](https://github.com/qin-wei-dong/openmausbot-aarch64/releases/tag/v0.1.170-arm64-dev-source)**（约 959 MB）
 
-```
-omb-offline/
-├── install.sh                    # 一键部署脚本
-├── config.json.template          # 内网模型接入配置模板
-├── node-v24.22.3-linux-arm64.tar.xz   # Node 运行时
-├── pnpm-10.33.0.tgz              # pnpm 包管理器
-├── pnpm-store/                   # pnpm 内容寻址依赖缓存（2.3G，已分卷）
-└── source/                       # 源码（含构建好的 dist/ 前端，不含 node_modules）
-```
+一个包内含全部内容，**下载这一个即可，无需另下任何东西**：
 
-## 部署步骤（内网机）
+- arm64 移植版完整源码：桌面端 UI（`src/`）+ Electron 壳（`electron/`）+ harness 与全部 agent 驱动（`server/`）
+- pnpm 离线依赖缓存 `pnpm-store/`（duckdb/resvg/electron 等 arm64 原生模块已就位）
+- Node 24 arm64 运行时、pnpm 10.33.0 离线包
+- arm64 原生资源（内置浏览器 / cloudflared / duckdb）
+- AppImage 打包工具、`install-offline.sh` / `run-desktop.sh` / `build-desktop.sh`
+- 内网模型配置模板与详细说明（包内 `README.md`）
 
-### 0. 上传到内网机
+## 为什么是这份源码
 
-把本包上传到你私有仓库的 Release，在内网机下载后合并分卷并解压：
+OpenMausBot 官方只发 x64 的 Linux 安装包，aarch64 无官方包；且官方不发源码包里的离线依赖。
+这份源码在官方 v0.1.170 基础上做了 arm64 适配（构建目标、原生资源路径、CUA 降级等），
+并把内网构建所需的**全部依赖离线化**，解压即可改造、构建、运行。
 
-```sh
-cat pnpm-store.tar.gz.part-* > pnpm-store.tar.gz
-tar xzf pnpm-store.tar.gz        # 得到 pnpm-store/ 目录
-```
+桌面端与 harness 是源码内原生打通的（Electron 主进程内嵌 harness server），
+你在 UI 里的指令直接驱动 harness，无需额外接线。
 
-### 1. 修改模型配置
-
-编辑 `config.json.template`，把 `url` / `model` / `OMB_KEY` 改成你的内网 OpenAI 兼容模型信息，
-或直接改好后放到 `~/.openmausbot/config.json`。
-
-> 驱动为 `openai-compat`，要求端点是 OpenAI 兼容格式（有 `/v1/chat/completions`）。
-> 若模型不支持工具调用，在 `config` 中加 `"tools": false`。
-
-### 2. 一键部署
+## 内网使用概要
 
 ```sh
-chmod +x install.sh
-./install.sh
+tar xzf openmausbot-dev-source-arm64.tar.gz
+cd <解压目录>
+./install-offline.sh        # 全程离线装好 Node24 + pnpm + 依赖
+# 改 source/config.json 嵌入内网 OpenAI 兼容模型
+./run-desktop.sh            # 开发模式启动桌面端
 ```
 
-脚本会：解压 Node 24 → 启用 pnpm 10.33 → 配置 store → 离线重建依赖 → 生成配置模板。
+改界面动 `source/src/`，改 harness / 模型驱动动 `source/server/`。
+完整步骤、离线依赖闭环、arm64 改动清单见包内 `README.md`。
 
-### 3. 启动
+## 说明
 
-```sh
-cd source
-export PATH="$(pwd)/../node-v24.22.3-linux-arm64/bin:$PATH"
-pnpm omb serve --lan
-```
-
-浏览器打开终端打印的 pairing link（形如 `http://<内网IP>:8799/pair#code=…`）即可使用。
-`dist/` 前端已预先构建，浏览器能正常显示页面。
-
-## 二次开发
-
-改动集中在 `source/server/drivers/`：SPI 很小，改一个文件 + 一行注册即可接入新引擎。
-改完重启 server 生效，无需重新打包 `.deb`。
-
-## 合规
-
-- 主项目 Apache-2.0；`source/enterprise/` 目录为 source-available 单独许可，**商用分发前请删除该目录**（删除后即纯开源版）。
-- 本包未包含任何密钥；`config.json` 以 0600 明文存储，注意内网机账号隔离。
+- 不含打包好的 `.deb` / `.AppImage`——按需求只提供可二次改造的源码。
+- 内网模型适配（嵌模型、改协议等）需在内网完成，故提供源码而非成品。
+- CUA「bot 控制本机屏幕/鼠标键盘」在 arm64 上不可用（上游仅 x86_64），功能优雅降级，不影响聊天与工具调用。
