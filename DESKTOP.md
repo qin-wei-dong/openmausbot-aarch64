@@ -1,1 +1,81 @@
-# OpenMausBot 桌面版 · linux arm64 (UOS 20)这是从官方 v0.1.170 源码移植打包的 **Electron 桌面应用**，可在 UOS 20 (aarch64) 上直接运行。同一个 Release 提供两种格式，**二选一即可，不需要都装**：| 文件 | 形态 | 安装 | 适合 ||---|---|---|---|| `OpenMausBot-0.1.170-arm64.deb` | UOS/Debian 原生软件包 | `sudo dpkg -i` | 固定机器日常使用，进应用菜单、可卸载 || `OpenMausBot-0.1.170-arm64.AppImage` | 免安装单文件 | `chmod +x` 后双击/命令行运行 | 不想写系统、U 盘携带、多机试用 |## 与 server 版的区别| | 桌面版（本包） | server 版（另一个 Release） ||---|---|---|| 形态 | 独立桌面窗口，双击打开 | 浏览器访问 web UI || 安装 | deb 一条命令 / AppImage 免安装 | 解压 + install.sh + 启动服务 || 依赖 | 系统 GTK3/NSS/AppArmor；AppImage 另需 FUSE2 | 需自备 Node 24 + 离线 store || 适合 | 日常直接使用 | 无桌面 / 服务器部署 |## 安装### 方式 A：deb（推荐日常使用）```sh# 下载 OpenMausBot-0.1.170-arm64.deb 后sudo dpkg -i OpenMausBot-0.1.170-arm64.deb# 若提示缺依赖sudo apt --fix-broken install```从应用菜单启动 OpenMausBot。卸载：`sudo apt remove openmausbot`。### 方式 B：AppImage（免安装）```shchmod +x OpenMausBot-0.1.170-arm64.AppImage./OpenMausBot-0.1.170-arm64.AppImage```- AppImage 自带运行时，不写入 `/opt`、不注册应用菜单，删掉文件即卸载。- 若系统缺 FUSE2 导致双击没反应，可执行 `./OpenMausBot-0.1.170-arm64.AppImage --appimage-extract` 解包后运行 `squashfs-root/AppRun`；该方式已实测可用。- 该 AppImage 是 type-2 格式，内部主程序与 cloudflared 均为 ARM aarch64 原生二进制。## 已知限制（重要）- **"bot 控制本机屏幕/鼠标键盘"功能不可用**：上游 CUA 运行时只有 x86_64 二进制，arm64 无官方版本，打包时已移除。代码为 fail-closed 设计，缺失时功能优雅降级、App 不崩溃。- 聊天、bots 对话、工具调用、云端电脑（Boat/Local VM）、web 搜索等**全部正常**。## 配置内网模型首次启动后，编辑 `~/.openmausbot/config.json`，加入 OpenAI 兼容端点：```json{  "instances": {    "intranet-llm": {      "driver": "openai-compat",      "displayName": "内网模型",      "environment": { "OMB_KEY": "key，无key填 dummy" },      "config": {        "url": "http://内网模型地址/v1",        "apiKeyEnv": "OMB_KEY",        "model": "模型ID"      }    }  }}```模型不支持工具调用时，在 `config` 中加 `"tools": false`。改完重启 App。## 移植说明（供后续维护）基于官方源码做了 4 处改动以适配 arm64：1. `electron-builder.yml`：linux target 改为 `AppImage + deb` 双目标且均为 `arm64`；extraResources 去掉 `cua-linux-x64`，其余资源路径 x64→arm64。AppImage 工具不再靠容器在线下载，改为预下载并校验的 `appimage-tools-runtime-20251108.tar.gz`，通过 `APPIMAGE_TOOLS_PATH=/work/appimage-tools` 注入（SHA256 `84021a78ee214ae6fd33a2d62a92ba25542dd10bc86bf117a9b2d0bba44e7665`）。2. `scripts/after-pack.mjs`：cloudflared 架构白名单加 `linux-arm64`；CUA 校验改为目录不存在则跳过。3. `build/linux-after-install.sh`：CUA 权限修复改为目录存在才执行。4. 打包时用 `ELECTRON_MIRROR=https://npmmirror.com/mirrors/electron/` 规避 GitHub 下载超时。原生资源（cloudflared/browser/duckdb）均为 linux-arm64 官方版本。
+# OpenMausBot 桌面版 · linux arm64 (UOS 20)
+
+这是从官方 v0.1.170 源码移植打包的 **Electron 桌面应用**，可在 UOS 20 (aarch64) 上直接运行。
+
+同一个 Release 提供两种格式，**二选一即可，不需要都装**：
+
+| 文件 | 形态 | 安装 | 适合 |
+|---|---|---|---|
+| `OpenMausBot-0.1.170-arm64.deb` | UOS/Debian 原生软件包 | `sudo dpkg -i` | 固定机器日常使用，进应用菜单、可卸载 |
+| `OpenMausBot-0.1.170-arm64.AppImage` | 免安装单文件 | `chmod +x` 后双击/命令行运行 | 不想写系统、U 盘携带、多机试用 |
+
+## 与 server 版的区别
+
+| | 桌面版（本包） | server 版（另一个 Release） |
+|---|---|---|
+| 形态 | 独立桌面窗口，双击打开 | 浏览器访问 web UI |
+| 安装 | deb 一条命令 / AppImage 免安装 | 解压 + install.sh + 启动服务 |
+| 依赖 | 系统 GTK3/NSS/AppArmor；AppImage 另需 FUSE2 | 需自备 Node 24 + 离线 store |
+| 适合 | 日常直接使用 | 无桌面 / 服务器部署 |
+
+## 安装
+
+### 方式 A：deb（推荐日常使用）
+
+```sh
+# 下载 OpenMausBot-0.1.170-arm64.deb 后
+sudo dpkg -i OpenMausBot-0.1.170-arm64.deb
+# 若提示缺依赖
+sudo apt --fix-broken install
+```
+
+从应用菜单启动 OpenMausBot。卸载：`sudo apt remove openmausbot`。
+
+### 方式 B：AppImage（免安装）
+
+```sh
+chmod +x OpenMausBot-0.1.170-arm64.AppImage
+./OpenMausBot-0.1.170-arm64.AppImage
+```
+
+- AppImage 自带运行时，不写入 `/opt`、不注册应用菜单，删掉文件即卸载。
+- 若系统缺 FUSE2 导致双击没反应，可执行 `./OpenMausBot-0.1.170-arm64.AppImage --appimage-extract` 解包后运行 `squashfs-root/AppRun`；该方式已实测可用。
+- 该 AppImage 是 type-2 格式，内部主程序与 cloudflared 均为 ARM aarch64 原生二进制。
+
+## 已知限制（重要）
+
+- **"bot 控制本机屏幕/鼠标键盘"功能不可用**：上游 CUA 运行时只有 x86_64 二进制，arm64 无官方版本，打包时已移除。代码为 fail-closed 设计，缺失时功能优雅降级、App 不崩溃。
+- 聊天、bots 对话、工具调用、云端电脑（Boat/Local VM）、web 搜索等**全部正常**。
+
+## 配置内网模型
+
+首次启动后，编辑 `~/.openmausbot/config.json`，加入 OpenAI 兼容端点：
+
+```json
+{
+  "instances": {
+    "intranet-llm": {
+      "driver": "openai-compat",
+      "displayName": "内网模型",
+      "environment": { "OMB_KEY": "key，无key填 dummy" },
+      "config": {
+        "url": "http://内网模型地址/v1",
+        "apiKeyEnv": "OMB_KEY",
+        "model": "模型ID"
+      }
+    }
+  }
+}
+```
+
+模型不支持工具调用时，在 `config` 中加 `"tools": false`。改完重启 App。
+
+## 移植说明（供后续维护）
+
+基于官方源码做了 4 处改动以适配 arm64：
+1. `electron-builder.yml`：linux target 改为 `AppImage + deb` 双目标且均为 `arm64`；extraResources 去掉 `cua-linux-x64`，其余资源路径 x64→arm64。AppImage 工具不再靠容器在线下载，改为预下载并校验的 `appimage-tools-runtime-20251108.tar.gz`，通过 `APPIMAGE_TOOLS_PATH=/work/appimage-tools` 注入（SHA256 `84021a78ee214ae6fd33a2d62a92ba25542dd10bc86bf117a9b2d0bba44e7665`）。
+2. `scripts/after-pack.mjs`：cloudflared 架构白名单加 `linux-arm64`；CUA 校验改为目录不存在则跳过。
+3. `build/linux-after-install.sh`：CUA 权限修复改为目录存在才执行。
+4. 打包时用 `ELECTRON_MIRROR=https://npmmirror.com/mirrors/electron/` 规避 GitHub 下载超时。
+
+原生资源（cloudflared/browser/duckdb）均为 linux-arm64 官方版本。
