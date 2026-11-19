@@ -6,7 +6,7 @@
 
 唯一交付物在 Releases：
 
-**[v0.1.170-arm64-dev-source → openmausbot-dev-source-arm64.tar.gz](https://github.com/qin-wei-dong/openmausbot-aarch64/releases/tag/v0.1.170-arm64-dev-source)**（约 959 MB）
+**[v0.1.170-arm64-dev-source → openmausbot-dev-source-arm64.tar.gz](https://github.com/qin-wei-dong/openmausbot-aarch64/releases/tag/v0.1.170-arm64-dev-source)**（约 1.1 GB）
 
 本仓库是**公开仓库**，内网无需 GitHub 账号或令牌，直接下载：
 
@@ -20,6 +20,7 @@ curl -fL -o openmausbot-dev-source-arm64.tar.gz \
 - arm64 移植版完整源码：桌面端 UI（`src/`）+ Electron 壳（`electron/`）+ harness 与全部 agent 驱动（`server/`）
 - pnpm 离线依赖缓存 `pnpm-store/`（duckdb/resvg/electron 等 arm64 原生模块已就位）
 - Node 24 arm64 运行时、pnpm 10.33.0 离线包
+- Electron 43.7.9 linux-arm64 二进制与 fpm 打包工具（`vendor/`）——重打 deb/AppImage 全程无需外网
 - arm64 原生资源（内置浏览器 / cloudflared / duckdb）
 - AppImage 打包工具、`install-offline.sh` / `run-desktop.sh` / `build-desktop.sh`
 - 内网模型配置模板与详细说明（包内 `README.md`）
@@ -38,9 +39,10 @@ OpenMausBot 官方只发 x64 的 Linux 安装包，aarch64 无官方包；且官
 ```sh
 tar xzf openmausbot-dev-source-arm64.tar.gz
 cd <解压目录>
-./install-offline.sh        # 全程离线装好 Node24 + pnpm + 依赖
+./install-offline.sh        # 全程离线装好 Node24 + pnpm + 依赖 + Electron 二进制
 # 改 source/config.json 嵌入内网 OpenAI 兼容模型
 ./run-desktop.sh            # 开发模式启动桌面端
+./build-desktop.sh          # 改完代码，全离线重打 deb / AppImage（无需 Docker、无需外网）
 ```
 
 改界面动 `source/src/`，改 harness / 模型驱动动 `source/server/`。
